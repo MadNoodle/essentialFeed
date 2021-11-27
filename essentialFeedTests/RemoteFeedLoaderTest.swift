@@ -63,7 +63,7 @@ class RemoteFeedLoaderTest: XCTestCase {
         }
         
         func complete(with error: Error, at index: Int = 0) {
-            completions[0](error)
+            completions[index](error)
         }
     }
 }
