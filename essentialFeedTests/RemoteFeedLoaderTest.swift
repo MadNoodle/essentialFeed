@@ -38,12 +38,10 @@ class RemoteFeedLoaderTest: XCTestCase {
     func test_load_deliversErrorOnClientError() {
         let (sut, client) = makeSut()
         
-        var capturedErrors = [RemoteFeedLoader.Error]()
-        sut.load { capturedErrors.append($0)}
-        let clientError = NSError(domain: "test", code: 0)
-        client.complete(with: clientError)
-        
-        XCTAssertEqual(capturedErrors, [.connectivity])
+        expect(sut, toCompleteError: .connectivity) {
+            let clientError = NSError(domain: "test", code: 0)
+            client.complete(with: clientError)
+        }
     }
     
     func test_load_deliversErrorOnNo200HTTPResponse() {
@@ -61,14 +59,12 @@ class RemoteFeedLoaderTest: XCTestCase {
     
     func test_load_delivers_anInvalidJSON() {
         let (sut, client) = makeSut()
-        
-        var capturedErrors = [RemoteFeedLoader.Error]()
-        sut.load {capturedErrors.append($0)}
-        let invalidJson = Data("invalid json".utf8)
-        client.complete(withStatusCode: 200, data: invalidJson)
-        
-        XCTAssertEqual(capturedErrors, [.invalidData])
+        expect(sut, toCompleteError: .invalidData) {
+            let invalidJson = Data("invalid json".utf8)
+            client.complete(withStatusCode: 200, data: invalidJson)
+        }
     }
+    
     private func makeSut(url: URL = URL(string:"http://given-url.com")!) -> (sut: RemoteFeedLoader, client: HTTPClientSpy) {
         let client = HTTPClientSpy()
         let sut = RemoteFeedLoader(url: url, client: client)
@@ -76,7 +72,15 @@ class RemoteFeedLoaderTest: XCTestCase {
         
     }
     
-   
+    private func expect(_ sut: RemoteFeedLoader, toCompleteError error: RemoteFeedLoader.Error, when action: () -> Void, file: StaticString = #file, line: UInt = #line) {
+        var capturedErrors = [RemoteFeedLoader.Error]()
+        sut.load {capturedErrors.append($0)}
+        
+        action()
+        
+        XCTAssertEqual(capturedErrors, [error], file: file, line: line)
+    }
+    
     private class HTTPClientSpy: HTTPClient {
         private var messages = [(url: URL, completion: ( HTTPClientResult) -> Void)]()
         
