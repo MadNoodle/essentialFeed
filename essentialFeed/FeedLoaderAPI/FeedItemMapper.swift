@@ -35,5 +35,4 @@ internal final class FeedItemMapper {
         guard response.statusCode == OK_200, let root = try? JSONDecoder().decode(RootNode.self, from: data)  else { return .failure(.invalidData)}
         return .success(root.feed)
     }
-    
 }
